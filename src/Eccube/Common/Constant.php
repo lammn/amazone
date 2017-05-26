@@ -44,5 +44,14 @@ class Constant {
      * Csrf Token Name.
      */
     const TOKEN_NAME = '_token';
-
+    
+    /**
+     * WP link
+     */
+    const WP_URI = 'https://amazone-lammn90.c9users.io/html/wp';
+    
+    /**
+     * WP type to get content
+     */
+    const WP_TYPE = 'wp-json';
 }
