@@ -420,10 +420,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
                                             {% for level4 in grandson.children %}
                                                 {% if level4.hasProductCategories %}
                                                     <li class="hide category{{ child.id }} parent{{ child.id }} cate{{ level4.id }}" grand_parent="{{ Category.id }}" level="3" parent_id="{{ child.id }}">
-                                                        <a href="{{ url('product_list') }}?category_id={{ level4.id }}" category_id="{{ level4.id }}" level="3" style="border-bottom: none;" parent_id="{{ child.id }}">
+                                                        <a href="{{ url('category_sub', {'main_cate': Category.eng_name, 'sub_cate': level4.eng_name}) }}" category_id="{{ level4.id }}" level="3" style="border-bottom: none;" parent_id="{{ child.id }}">
                                                             {{ level4.name }}
                                                         </a>
-                                                    </li>
                                                 {% endif %}
                                             {% endfor %}
                                     {% endif %}
