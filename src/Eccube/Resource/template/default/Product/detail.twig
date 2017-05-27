@@ -218,7 +218,15 @@ $(function(){
                                             {% if Category.level == 3 %}
                                                 <li parent_id="{{Category.Parent.id}}" id="category--{{ ProductCategory.product_id }}_{{ loop.parent.loop.index }}_{{ Category.id }}" level={{ Category.level }} category_id="{{ Category.id }}">{{ Category.name }}</li>
                                             {% else %}
-                                                <li parent_id="{{Category.Parent.id}}" id="category--{{ ProductCategory.product_id }}_{{ loop.parent.loop.index }}_{{ Category.id }}" level={{ Category.level }} category_id="{{ Category.id }}"><a href="{{ url('product_list') }}?category_id={{ Category.id }}">{{ Category.name }}</a></li>
+                                                 {% if Category.level == 2 %}
+                                                    <li parent_id="{{Category.Parent.id}}" id="category--{{ ProductCategory.product_id }}_{{ loop.parent.loop.index }}_{{ Category.id }}" level={{ Category.level }} category_id="{{ Category.id }}">
+                                                        <a href="{{ url('category_sub', {'main_cate': Category.Parent.eng_name, 'sub_cate': Category.eng_name}) }}">{{ Category.name }}</a>
+                                                    </li>
+                                                {% else %}
+                                                    <li parent_id="{{Category.Parent.id}}" id="category--{{ ProductCategory.product_id }}_{{ loop.parent.loop.index }}_{{ Category.id }}" level={{ Category.level }} category_id="{{ Category.id }}">
+                                                        <a href="{{ url('category_sub', {'main_cate': Category.Parent.Parent.Parent.eng_name, 'sub_cate': Category.eng_name}) }}">{{ Category.name }}</a>
+                                                    </li>
+                                                {% endif %}
                                             {% endif %}
                                         {% endif %}
                                     {% endfor %}
