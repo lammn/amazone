@@ -48,7 +48,7 @@ class Constant {
     /**
      * WP link
      */
-    const WP_URI = 'https://amazone-lammn90.c9users.io/html/wp';
+    const WP_URI = 'https://amazone-lammn90.c9users.io/html/archives';
     
     /**
      * WP type to get content
