@@ -248,7 +248,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
                     'level': level,
                     'all': all
                 },
-                url: '{{ url('product_realtime') }}',
+                url: '{{ path('product_realtime') }}',
                 success: function (data) {
                     // モーダルに結果を書き出し.
                     var height = $("#sidebar").height();
@@ -486,8 +486,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
                             {% endif %}
                         {% endfor %}
                     {% else %}
-                        <p id="result_info_box__item_count" class="intro col-sm-6"><strong style="display: none;"><span
-                                        id="productscount">{{ pagination.totalItemCount }}</span>件</strong>お探しの商品は見つかりませんでした。
+                        <p id="result_info_box__item_count" class="intro col-sm-6">
+                            <strong style="display: none;">
+                            <span id="productscount">{{ pagination.totalItemCount }}</span>件</strong>お探しの商品は見つかりませんでした。
                         </p>
                     {% endif %}
                 </form>
@@ -534,6 +535,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
                     {% endfor %}
                 </div>
             </div>
+            aaa
             <!-- ▲item_list▲ -->
             {#{% if pagination.totalItemCount > 0 %}#}
             {#    {% include "pagination.twig" with { 'pages' : pagination.paginationData } %}#}
