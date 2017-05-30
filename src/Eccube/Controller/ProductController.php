@@ -488,10 +488,7 @@ class ProductController
             $app['orm.em']->getFilters()->enable('nostock_hidden');
         }
 
-        // handleRequestは空のqueryの場合は無視するため
-        if ($request->getMethod() === 'GET') {
-            $request->query->set('pageno', $request->query->get('pageno', ''));
-        }
+        $request->query->set('pageno', $request->query->get('pageno', 1));
 
         // searchForm
         /* @var $builder \Symfony\Component\Form\FormBuilderInterface */
@@ -537,10 +534,12 @@ class ProductController
         );
         $app['eccube.event.dispatcher']->dispatch(EccubeEvents::FRONT_PRODUCT_INDEX_SEARCH, $event);
         $searchData = $event->getArgument('searchData');
-
+        
+        // $page_no = !empty($searchData['pageno']) ? $searchData['pageno'] : 1;
+        $page_no = $request->query->get('pageno', 1);
         $pagination = $app['paginator']()->paginate(
             $qb,
-            !empty($searchData['pageno']) ? $searchData['pageno'] : 1,
+            $page_no,
             $searchData['disp_number']->getId()
         );
 
@@ -616,6 +615,7 @@ class ProductController
             'label' => '表示順',
             'allow_extra_fields' => true,
         ));
+        
         if ($request->getMethod() === 'GET') {
             $builder->setMethod('GET');
         }
@@ -644,7 +644,11 @@ class ProductController
             'order_by_form' => $orderByForm->createView(),
             'forms' => $forms,
             'Category' => $Category,
-            'Categories' => $Categories
+            'Categories' => $Categories,
+            'category_id' => $request->get("category_id"),
+            'level' => $level,
+            'pageno' => $page_no,
+            'all' => $category,
         ));
     }
 

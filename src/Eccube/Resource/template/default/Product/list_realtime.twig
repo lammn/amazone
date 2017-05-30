@@ -110,3 +110,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     {% else %}
         <p class="errormsg text-danger">ご指定のカテゴリは存在しません。</p>
     {% endif %}
+    <script>
+        $(function() {
+           $("div.pagination > ul > li > a").click(function(e) {
+                e.preventDefault();
+                var self = $(this);
+                var _url = self.attr('href');
+                $.ajax({
+                    type: 'POST',
+                    data: {
+                        'category_id': '{{category_id}}',
+                        'level': '{{level}}',
+                        'all': '{{all}}'
+                    },
+                    url: _url,
+                    success: function (data) {
+                        // モーダルに結果を書き出し.
+                        var height = $("#sidebar").height();
+                        $("#content").css("min-height", height);
+                        $('#content').html(data);
+                        var items = $("#all_items").val();
+                        $("#count_items").text("対象商品:" + items + "件");
+                        $("#overlay").hide();
+                        $("#loader").hide();
+    
+                    },
+                    error: function () {
+                        $("#overlay").hide();
+                        $("#loader").hide();
+                        console.log('search product failed.');
+                    }
+                });
+            }); 
+        });
+    </script>
