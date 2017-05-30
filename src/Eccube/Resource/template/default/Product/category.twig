@@ -275,6 +275,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
         });
 
         $(document).ready(function () {
+            // get category by link
+            getProductList('{{category_id}}', '{{level}}', '{{all}}');
+            
             //var cateID = $("#category_id").val();
             var cateID = $("#categoryID").val();
             $("#category_id").val(cateID);
@@ -384,6 +387,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     <input type="hidden" value="{{ Category.id }}" id="categoryID">
     <input type="hidden" value="category" id="template_name">
     <form name="form1" id="form1" method="get" action="?">
+        <input type="hidden" name="main_cate" value="{{main_cate}}"/>
         {{ form_widget(search_form) }}
     </form>
 
@@ -435,7 +439,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
                                                 <li class="hide category{{ child.id }} parent{{ child.id }} cate{{ level4.id }}"
                                                     grand_parent="{{ Category.id }}" level="3"
                                                     parent_id="{{ child.id }}">
-                                                    <a href="{{ url('category_sub', {'main_cate': Category.eng_name, 'sub_cate': level4.eng_name}) }}"
+                                                    <a href="{{ path('category_sub', {'main_cate': Category.eng_name, 'sub_cate': level4.eng_name}) }}"
                                                        category_id="{{ level4.id }}" level="3"
                                                        style="border-bottom: none;" parent_id="{{ child.id }}">
                                                         {{ level4.name }}
@@ -535,7 +539,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
                     {% endfor %}
                 </div>
             </div>
-            aaa
             <!-- ▲item_list▲ -->
             {#{% if pagination.totalItemCount > 0 %}#}
             {#    {% include "pagination.twig" with { 'pages' : pagination.paginationData } %}#}

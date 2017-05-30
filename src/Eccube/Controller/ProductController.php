@@ -201,7 +201,7 @@ class ProductController
         ));
     }
     
-    public function category_main(Application $app, Request $request, $main_cate)
+    public function category_main(Application $app, Request $request, $main_cate = null)
     {
         $BaseInfo = $app['eccube.repository.base_info']->get();
 
@@ -210,10 +210,7 @@ class ProductController
             $app['orm.em']->getFilters()->enable('nostock_hidden');
         }
 
-        // handleRequestは空のqueryの場合は無視するため
-        if ($request->getMethod() === 'GET') {
-            $request->query->set('pageno', $request->query->get('pageno', ''));
-        }
+         $request->query->set('pageno', $request->query->get('pageno', 1));
 
         // searchForm
         /* @var $builder \Symfony\Component\Form\FormBuilderInterface */
@@ -232,7 +229,8 @@ class ProductController
         // paginator
         $searchData = $searchForm->getData();
         $Category = $app['eccube.repository.category']->findOneBy(array("eng_name" => $main_cate));
-    
+        $level = $Category->getLevel();
+        $category_id = $Category->getId();
         if (!$Category) {
             throw new NotFoundHttpException();
         }
@@ -245,11 +243,13 @@ class ProductController
         
         $qb = $app['eccube.repository.product']->getQueryBuilderBySearchData($searchData);
 
+        $page_no = $request->query->get('pageno', 1);
         $pagination = $app['paginator']()->paginate(
             $qb,
-            !empty($searchData['pageno']) ? $searchData['pageno'] : 1,
+            $page_no,
             $searchData['disp_number']->getId()
         );
+        
         // addCart form
         $forms = array();
         foreach ($pagination as $Product) {
@@ -331,7 +331,12 @@ class ProductController
             'order_by_form' => $orderByForm->createView(),
             'forms' => $forms,
             'Category' => $Category,
-            'Categories' => $Categories
+            'Categories' => $Categories,
+            'category_id' => $category_id,
+            'level' => $level,
+            'pageno' => $page_no,
+            'all' => '',
+            'main_cate' => $main_cate
         ));
     }
     
@@ -648,7 +653,7 @@ class ProductController
             'category_id' => $request->get("category_id"),
             'level' => $level,
             'pageno' => $page_no,
-            'all' => $category,
+            'all' => $category
         ));
     }
 
