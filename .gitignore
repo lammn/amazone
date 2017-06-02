@@ -35,4 +35,3 @@ composer.phar
 app/config/
 html/plugin/
 html/upload/temp_image/
-html/user_data/
