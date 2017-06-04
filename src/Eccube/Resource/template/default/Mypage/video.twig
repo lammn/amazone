@@ -48,13 +48,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
             window.player = player;
             player.updateSrc([
                 {
-                    src: '{{ app.config.user_data_urlpath }}/video/{{ Product.sd_link }}',
+                    src: 'https://drive.google.com/file/d/0BwyH2uauhQGJSUNqUzctNWdPa1E/preview',
                     type: 'video/mp4',
                     label: 'SD',
                     res: 360
                 },
                 {
-                    src: '{{ app.config.user_data_urlpath }}/video/{{ Product.hd_link }}',
+                    src: 'https://drive.google.com/file/d/0BwyH2uauhQGJSUNqUzctNWdPa1E/preview',
                     type: 'video/mp4',
                     label: 'HD',
                     res: 720
@@ -73,13 +73,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
         $(function () {
            $("#header").hide();
            $("#footer").hide();
+           var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+           $("#video").css("width", width);
         });
     </script>
 {% endblock %}
 
 {% block main %}
 <div id="video_box">
-    <video id="video" class="video-js vjs-sublime-skin" controls preload="auto" width="680" height="375" poster="{{ app.config.image_save_urlpath }}/{{ Product.main_list_image|no_image_product }}" data-setup="{}">
+    <video id="video" class="video-js vjs-sublime-skin" controls preload="auto" height="375" poster="{{ app.config.image_save_urlpath }}/{{ Product.main_list_image|no_image_product }}" data-setup="{}">
     </video>
 </div>
 {% endblock %}

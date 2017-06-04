@@ -27,6 +27,59 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 {% form_theme form 'Form/bootstrap_3_horizontal_layout.html.twig' %}
 
+{% block stylesheet %}
+    <style>
+        /* Small devices (tablets, 768px and up) */
+        @media (max-width: 768px) and (min-width : 375px) { 
+            .modal_button {
+                margin-left: 10px;
+                margin-bottom: 30px;
+            }
+            
+            .modal_button button{
+                width: 300px; 
+                height: 60px;
+            }
+        }
+        
+        @media (max-width: 374px) { 
+            .modal_button {
+                margin-bottom: 30px;
+            }
+            
+            .modal_button button{
+                width: 280px; 
+                height: 60px;
+            }
+        }
+        
+        /* Medium devices (desktops, 992px and up) */
+        @media (min-width: 769px) {
+            #modal_div {
+                width: 800px;
+            }
+            #item_photo_div {
+                width: 320px;
+                height: 320px;
+                float: left;
+            }
+            
+            .modal_button {
+                margin-right: 100px;
+                float: right;
+                margin-bottom: 30px;
+            }
+            
+            .modal_button button{
+                width: 250px; 
+                height: 60px;
+            }
+        
+        }
+    
+    </style>
+{% endblock stylesheet %}
+
 {% block javascript %}
     <script>
         // 表示件数を変更
@@ -104,19 +157,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
         }
 
         $(function(){
+            var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
             $(".heart").change(function () {
                 $("#page_navi_top").submit();
             });
 
             $('#hd_button button').click(function() {
                 var product_id = $(this).attr("product_id");
-                window.open('{{ url('mypage_video') }}?product_id=' + product_id,"WindowName","width=700,height=400");
+                if (width > 700) {
+                    window.open('{{ url('mypage_video') }}?product_id=' + product_id,"WindowName","width=700,height=400");
+                } else {
+                    window.open('{{ url('mypage_video') }}?product_id=' + product_id,"WindowName","width=" + width + ",height=400");
+                }
+                
+                
                 return false;
             });
 
             $('#sd_button button').click(function() {
                 var product_id = $(this).attr("product_id");
-                window.open('{{ url('mypage_video_sd') }}?product_id=' + product_id,"WindowName","width=700,height=400");
+                if (width > 700) {
+                    window.open('{{ url('mypage_video') }}?product_id=' + product_id,"WindowName","width=700,height=400");
+                } else {
+                    window.open('{{ url('mypage_video') }}?product_id=' + product_id,"WindowName","width=" + width + ",height=400");
+                }
                 return false;
             });
             
@@ -244,23 +308,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 {% block modal %}
     <div class="modal fade" id="mymodel" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
-        <div class="modal-dialog" role="document" style="width: 800px;">
+        <div class="modal-dialog" role="document" id="modal_div">
             <div class="modal-content" style="background-color: white !important;">
                 <div class="modal-header">
                     <h4 class="modal-title" id="myModalLabel">クラフトノート</h4>
                 </div>
                 <div class="modal-body">
-                    <div class="item_photo" style="width: 320px; height: 320px;float: left;">
+                    <div class="item_photo" id="item_photo_div">
                         <img src="" id="modal-image"/>
                     </div>
-                    <div style="margin-right: 100px;float: right;margin-bottom: 30px;margin-top: 20px;" id="hd_button" href='{{ url('mypage_video') }}' product_id="">
-                        <a><button class="btn btn-primary btn-lg" style="width: 250px; height: 60px;">HD画質で再生</button></a>
+                    <div style="margin-top: 20px;" id="hd_button" href='{{ url('mypage_video') }}' product_id="" class="modal_button">
+                        <a><button class="btn btn-primary btn-lg">HD画質で再生</button></a>
                     </div>
-                    <div style="margin-right: 100px;float: right;margin-bottom: 30px;" id="sd_button" product_id="">
-                        <a><button class="btn btn-primary btn-lg"  style="width: 250px; height: 60px;">SD画質で再生</button></a>
+                    <div id="sd_button" product_id="" class="modal_button">
+                        <a><button class="btn btn-primary btn-lg">SD画質で再生</button></a>
                     </div>
-                    <div style="margin-right: 100px;float: right;margin-bottom: 30px;" id="review_button" product_id="">
-                        <a><button class="btn btn-primary btn-lg"  style="width: 250px; height: 60px;">レビューする</button></a>
+                    <div id="review_button" product_id="" class="modal_button">
+                        <a><button class="btn btn-primary btn-lg">レビューする</button></a>
                     </div>
                     <!-- ▼関連カテゴリ▼ -->
                     <div id="relative_category_box" class="relative_cat" style="clear:both;">
