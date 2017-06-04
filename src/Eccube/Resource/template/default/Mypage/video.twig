@@ -48,13 +48,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
             window.player = player;
             player.updateSrc([
                 {
-                    src: 'https://drive.google.com/file/d/0BwyH2uauhQGJSUNqUzctNWdPa1E/preview',
+                    src: '{{ app.config.user_data_urlpath }}/video/{{ Product.sd_link }}',
                     type: 'video/mp4',
                     label: 'SD',
                     res: 360
                 },
                 {
-                    src: 'https://drive.google.com/file/d/0BwyH2uauhQGJSUNqUzctNWdPa1E/preview',
+                     src: '{{ app.config.user_data_urlpath }}/video/{{ Product.hd_link }}',
                     type: 'video/mp4',
                     label: 'HD',
                     res: 720
