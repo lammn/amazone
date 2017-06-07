@@ -228,25 +228,40 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     <script>
         // 並び順を変更
         function fnChangeOrderBy(orderby) {
-            eccube.setValue('orderby', orderby);
-            eccube.setValue('pageno', 1);
-            eccube.submitForm();
+            var categoryID = $("#categoryID").val();
+            var level = $("#level").val();
+            var type = $("#type").val();
+            var disp_number = $("#disp_number").val();
+            var pageno = $("#pageno").val();
+            getProductList(categoryID, level, type, disp_number, orderby, pageno);
         }
 
         // 表示件数を変更
         function fnChangeDispNumber(dispNumber) {
-            eccube.setValue('disp_number', dispNumber);
-            eccube.setValue('pageno', 1);
-            eccube.submitForm();
+            var categoryID = $("#categoryID").val();
+            var level = $("#level").val();
+            var type = $("#type").val();
+            var orderby = $("#orderby").val();
+            var pageno = $("#pageno").val();
+            getProductList(categoryID, level, type, dispNumber, orderby, pageno);
         }
 
-        function getProductList(category_id, level, all) {
+        function getProductList(category_id, level, all, disp_number = 15, orderby = 1, pageno = 1) {
+            $("#categoryID").val(category_id);
+            $("#level").val(level);
+            $("#type").val(all);
+            $("#orderby").val(orderby);
+            $("#disp_number").val(disp_number);
+            $("#pageno").val(pageno);
             $.ajax({
                 type: 'POST',
                 data: {
                     'category_id': category_id,
                     'level': level,
-                    'all': all
+                    'all': all,
+                    'disp_number' : disp_number,
+                    'pageno' : pageno,
+                    'orderby' : orderby
                 },
                 url: '{{ path('product_realtime') }}',
                 success: function (data) {
@@ -385,6 +400,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 {% block main %}
     
     <input type="hidden" value="{{ Category.id }}" id="categoryID">
+    <input type="hidden" value="{{ level }}" id="level">
+    <input type="hidden" value="{{ all }}" id="type">
+    <input type="hidden" value="{{ disp_number_form.disp_number.vars.attr["selected"] }}" id="disp_number">
+    <input type="hidden" value="{{ order_by_form.orderby.vars.attr["selected"] }}" id="orderby">
+    <input type="hidden" value="{{ page_no }}" id="pageno">
     <input type="hidden" value="category" id="template_name">
     <form name="form1" id="form1" method="get" action="?">
         <input type="hidden" name="main_cate" value="{{main_cate}}"/>
@@ -393,8 +413,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
     <div class='wrapper'>
         <div class='sidebar' id="sidebar">
-            <div class='title' style="background: #0092C4;"><span id="count_items">対象商品:{{ pagination.totalItemCount }}
-                    件</span></div>
+            <div class='title' style="background: #0092C4;"><span id="count_items">対象商品:{{ pagination.totalItemCount }}件</span></div>
             <div class='title'>マインカテゴリ</div>
             <ul class='nav nav1'>
                 {% for Category in Categories %}

@@ -148,12 +148,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
                 e.preventDefault();
                 var self = $(this);
                 var _url = self.attr('href');
+                var categoryID = $("#categoryID").val();
+                var level = $("#level").val();
+                var type = $("#type").val();
+                var orderby = $("#orderby").val();
+                var pageno = "{{app.request.get('' ~ pageno)}}";
+                var disp_number = $("#disp_number").val();
+                $("#pageno").val(pageno);
+
                 $.ajax({
                     type: 'POST',
                     data: {
-                        'category_id': '{{category_id}}',
-                        'level': '{{level}}',
-                        'all': '{{all}}'
+                        'category_id': categoryID,
+                        'level': level,
+                        'all': type,
+                        'orderby': orderby,
+                        'disp_number': disp_number,
+                        'pageno' : pageno
                     },
                     url: _url,
                     success: function (data) {

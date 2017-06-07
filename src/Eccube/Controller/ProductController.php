@@ -52,9 +52,7 @@ class ProductController
         }
 
         // handleRequestは空のqueryの場合は無視するため
-        if ($request->getMethod() === 'GET') {
-            $request->query->set('pageno', $request->query->get('pageno', ''));
-        }
+        $request->query->set('pageno', $request->query->get('pageno', 1));
 
         // searchForm
         /* @var $builder \Symfony\Component\Form\FormBuilderInterface */
@@ -91,9 +89,11 @@ class ProductController
         );
         $app['eccube.event.dispatcher']->dispatch(EccubeEvents::FRONT_PRODUCT_INDEX_SEARCH, $event);
         $searchData = $event->getArgument('searchData');
+        
+        $page_no = !empty($searchData['pageno']) ? $searchData['pageno'] : 1;
         $pagination = $app['paginator']()->paginate(
             $qb,
-            !empty($searchData['pageno']) ? $searchData['pageno'] : 1,
+            $page_no,
             $searchData['disp_number']->getId()
         );
 
@@ -161,7 +161,6 @@ class ProductController
         $dispNumberForm = $builder->getForm();
 
         $dispNumberForm->handleRequest($request);
-
         // ソート順
         $builder = $app['form.factory']->createNamedBuilder('orderby', 'product_list_order_by', null, array(
             'empty_data' => null,
@@ -186,7 +185,11 @@ class ProductController
         $orderByForm->handleRequest($request);
 
         $Category = $searchForm->get('category_id')->getData();
-
+        if (!$Category) {
+            throw new NotFoundHttpException();
+        }
+        $category_id = $Category->getId();
+        $level = $Category->getLevel();
         $Categories = $app['eccube.repository.category']->getList();
 
         return $app->render('Product/list.twig', array(
@@ -197,7 +200,11 @@ class ProductController
             'order_by_form' => $orderByForm->createView(),
             'forms' => $forms,
             'Category' => $Category,
-            'Categories' => $Categories
+            'Categories' => $Categories,
+            'category_id' => $request->get("category_id"),
+            'level' => $level,
+            'all' => 'all',
+            'pageno' => $page_no
         ));
     }
     
@@ -229,11 +236,11 @@ class ProductController
         // paginator
         $searchData = $searchForm->getData();
         $Category = $app['eccube.repository.category']->findOneBy(array("eng_name" => $main_cate));
-        $level = $Category->getLevel();
-        $category_id = $Category->getId();
         if (!$Category) {
             throw new NotFoundHttpException();
         }
+        $level = $Category->getLevel();
+        $category_id = $Category->getId();
         
         if ($Category->getLevel() != 1) {
             throw new NotFoundHttpException();
@@ -244,6 +251,156 @@ class ProductController
         $qb = $app['eccube.repository.product']->getQueryBuilderBySearchData($searchData);
 
         $page_no = $request->query->get('pageno', 1);
+        $pagination = $app['paginator']()->paginate(
+            $qb,
+            $page_no,
+            $searchData['disp_number']->getId()
+        );
+        
+        // addCart form
+        $forms = array();
+        foreach ($pagination as $Product) {
+            /* @var $builder \Symfony\Component\Form\FormBuilderInterface */
+            $builder = $app['form.factory']->createNamedBuilder('', 'add_cart', null, array(
+                'product' => $Product,
+                'allow_extra_fields' => true,
+            ));
+            $addCartForm = $builder->getForm();
+
+            if ($request->getMethod() === 'POST' && (string)$Product->getId() === $request->get('product_id')) {
+                $addCartForm->handleRequest($request);
+
+                if ($addCartForm->isValid()) {
+                    $addCartData = $addCartForm->getData();
+
+                    try {
+                        $app['eccube.service.cart']->addProduct($addCartData['product_class_id'], $addCartData['quantity'])->save();
+                    } catch (CartException $e) {
+                        $app->addRequestError($e->getMessage());
+                    }
+
+                    $event = new EventArgs(
+                        array(
+                            'form' => $addCartForm,
+                            'Product' => $Product,
+                        ),
+                        $request
+                    );
+                    $app['eccube.event.dispatcher']->dispatch(EccubeEvents::FRONT_PRODUCT_INDEX_COMPLETE, $event);
+
+                    if ($event->getResponse() !== null) {
+                        return $event->getResponse();
+                    }
+
+                    return $app->redirect($app->url('cart'));
+                }
+            }
+
+            $forms[$Product->getId()] = $addCartForm->createView();
+        }
+
+        // 表示件数
+        $builder = $app['form.factory']->createNamedBuilder('disp_number', 'product_list_max', null, array(
+            'empty_data' => null,
+            'required' => false,
+            'label' => '表示件数',
+            'allow_extra_fields' => true,
+        ));
+        if ($request->getMethod() === 'GET') {
+            $builder->setMethod('GET');
+        }
+
+        $dispNumberForm = $builder->getForm();
+
+        $dispNumberForm->handleRequest($request);
+
+        // ソート順
+        $builder = $app['form.factory']->createNamedBuilder('orderby', 'product_list_order_by', null, array(
+            'empty_data' => null,
+            'required' => false,
+            'label' => '表示順',
+            'allow_extra_fields' => true,
+        ));
+        if ($request->getMethod() === 'GET') {
+            $builder->setMethod('GET');
+        }
+
+        $orderByForm = $builder->getForm();
+
+        $orderByForm->handleRequest($request);
+        $Categories = $app['eccube.repository.category']->getList();
+        return $app->render('Product/category.twig', array(
+            'subtitle' => $this->getPageTitle($searchData),
+            'pagination' => $pagination,
+            'search_form' => $searchForm->createView(),
+            'disp_number_form' => $dispNumberForm->createView(),
+            'order_by_form' => $orderByForm->createView(),
+            'forms' => $forms,
+            'Category' => $Category,
+            'Categories' => $Categories,
+            'category_id' => $category_id,
+            'level' => $level,
+            'pageno' => $page_no,
+            'all' => 'all',
+            'main_cate' => $main_cate
+        ));
+    }
+    
+    public function category_sub(Application $app, Request $request, $main_cate, $sub_cate)
+    {
+        $BaseInfo = $app['eccube.repository.base_info']->get();
+
+        // Doctrine SQLFilter
+        if ($BaseInfo->getNostockHidden() === Constant::ENABLED) {
+            $app['orm.em']->getFilters()->enable('nostock_hidden');
+        }
+
+        // handleRequestは空のqueryの場合は無視するため
+        if ($request->getMethod() === 'GET') {
+            $request->query->set('pageno', $request->query->get('pageno', 1));
+        }
+
+        // searchForm
+        /* @var $builder \Symfony\Component\Form\FormBuilderInterface */
+        $builder = $app['form.factory']->createNamedBuilder('', 'search_category_product');
+        $builder->setAttribute('freeze', true);
+        $builder->setAttribute('freeze_display_text', false);
+        if ($request->getMethod() === 'GET') {
+            $builder->setMethod('GET');
+        }
+
+        /* @var $searchForm \Symfony\Component\Form\FormInterface */
+        $searchForm = $builder->getForm();
+
+        $searchForm->handleRequest($request);
+
+        // paginator
+        $searchData = $searchForm->getData();
+        $MainCategory = $app['eccube.repository.category']->findOneBy(array("eng_name" => $main_cate));
+    
+        if (!$MainCategory) {
+            throw new NotFoundHttpException();
+        }
+        
+        $Childens = $MainCategory->getSelfAndDescendants();
+        $flag = false;
+        foreach ($Childens as $child) {
+            if ($child->getEngName() == $sub_cate) {
+                $flag = true;
+                $Category = $child;
+                break;
+            }
+        }
+
+        if (!$flag) {
+            throw new NotFoundHttpException();
+        }
+        
+        $searchData['category_id'] = $Category;
+        
+        $qb = $app['eccube.repository.product']->getQueryBuilderBySearchData($searchData);
+
+        $page_no = $request->get('pageno', 1);
         $pagination = $app['paginator']()->paginate(
             $qb,
             $page_no,
@@ -332,155 +489,10 @@ class ProductController
             'forms' => $forms,
             'Category' => $Category,
             'Categories' => $Categories,
-            'category_id' => $category_id,
-            'level' => $level,
-            'pageno' => $page_no,
-            'all' => '',
-            'main_cate' => $main_cate
-        ));
-    }
-    
-    public function category_sub(Application $app, Request $request, $main_cate, $sub_cate)
-    {
-        $BaseInfo = $app['eccube.repository.base_info']->get();
-
-        // Doctrine SQLFilter
-        if ($BaseInfo->getNostockHidden() === Constant::ENABLED) {
-            $app['orm.em']->getFilters()->enable('nostock_hidden');
-        }
-
-        // handleRequestは空のqueryの場合は無視するため
-        if ($request->getMethod() === 'GET') {
-            $request->query->set('pageno', $request->query->get('pageno', ''));
-        }
-
-        // searchForm
-        /* @var $builder \Symfony\Component\Form\FormBuilderInterface */
-        $builder = $app['form.factory']->createNamedBuilder('', 'search_category_product');
-        $builder->setAttribute('freeze', true);
-        $builder->setAttribute('freeze_display_text', false);
-        if ($request->getMethod() === 'GET') {
-            $builder->setMethod('GET');
-        }
-
-        /* @var $searchForm \Symfony\Component\Form\FormInterface */
-        $searchForm = $builder->getForm();
-
-        $searchForm->handleRequest($request);
-
-        // paginator
-        $searchData = $searchForm->getData();
-        $MainCategory = $app['eccube.repository.category']->findOneBy(array("eng_name" => $main_cate));
-    
-        if (!$MainCategory) {
-            throw new NotFoundHttpException();
-        }
-        
-        $Childens = $MainCategory->getSelfAndDescendants();
-        $flag = false;
-        foreach ($Childens as $child) {
-            if ($child->getEngName() == $sub_cate) {
-                $flag = true;
-                $Category = $child;
-                break;
-            }
-        }
-
-        if (!$flag) {
-            throw new NotFoundHttpException();
-        }
-        
-        $searchData['category_id'] = $Category;
-        
-        $qb = $app['eccube.repository.product']->getQueryBuilderBySearchData($searchData);
-
-        $pagination = $app['paginator']()->paginate(
-            $qb,
-            !empty($searchData['pageno']) ? $searchData['pageno'] : 1,
-            $searchData['disp_number']->getId()
-        );
-        // addCart form
-        $forms = array();
-        foreach ($pagination as $Product) {
-            /* @var $builder \Symfony\Component\Form\FormBuilderInterface */
-            $builder = $app['form.factory']->createNamedBuilder('', 'add_cart', null, array(
-                'product' => $Product,
-                'allow_extra_fields' => true,
-            ));
-            $addCartForm = $builder->getForm();
-
-            if ($request->getMethod() === 'POST' && (string)$Product->getId() === $request->get('product_id')) {
-                $addCartForm->handleRequest($request);
-
-                if ($addCartForm->isValid()) {
-                    $addCartData = $addCartForm->getData();
-
-                    try {
-                        $app['eccube.service.cart']->addProduct($addCartData['product_class_id'], $addCartData['quantity'])->save();
-                    } catch (CartException $e) {
-                        $app->addRequestError($e->getMessage());
-                    }
-
-                    $event = new EventArgs(
-                        array(
-                            'form' => $addCartForm,
-                            'Product' => $Product,
-                        ),
-                        $request
-                    );
-                    $app['eccube.event.dispatcher']->dispatch(EccubeEvents::FRONT_PRODUCT_INDEX_COMPLETE, $event);
-
-                    if ($event->getResponse() !== null) {
-                        return $event->getResponse();
-                    }
-
-                    return $app->redirect($app->url('cart'));
-                }
-            }
-
-            $forms[$Product->getId()] = $addCartForm->createView();
-        }
-
-        // 表示件数
-        $builder = $app['form.factory']->createNamedBuilder('disp_number', 'product_list_max', null, array(
-            'empty_data' => null,
-            'required' => false,
-            'label' => '表示件数',
-            'allow_extra_fields' => true,
-        ));
-        if ($request->getMethod() === 'GET') {
-            $builder->setMethod('GET');
-        }
-
-        $dispNumberForm = $builder->getForm();
-
-        $dispNumberForm->handleRequest($request);
-
-        // ソート順
-        $builder = $app['form.factory']->createNamedBuilder('orderby', 'product_list_order_by', null, array(
-            'empty_data' => null,
-            'required' => false,
-            'label' => '表示順',
-            'allow_extra_fields' => true,
-        ));
-        if ($request->getMethod() === 'GET') {
-            $builder->setMethod('GET');
-        }
-
-        $orderByForm = $builder->getForm();
-
-        $orderByForm->handleRequest($request);
-
-        $Categories = $app['eccube.repository.category']->getList();
-        return $app->render('Product/category.twig', array(
-            'subtitle' => $this->getPageTitle($searchData),
-            'pagination' => $pagination,
-            'search_form' => $searchForm->createView(),
-            'disp_number_form' => $dispNumberForm->createView(),
-            'order_by_form' => $orderByForm->createView(),
-            'forms' => $forms,
-            'Category' => $Category,
-            'Categories' => $Categories
+            'category_id' => $Category->getId(),
+            'level' => $Category->getLevel(),
+            'all' => 'all',
+            'pageno' => $page_no
         ));
     }
 
